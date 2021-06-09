@@ -1,0 +1,72 @@
+service: chatbot
+frameworkVersion: '2'
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+  stage: dev
+  region: us-east-1
+  lambdaHashingVersion: 20201221
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:DescribeTable
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+          Resource:
+            Fn::Join:
+              - ''
+              - - arn:aws:dynamodb:us-east-1:*:*
+
+resources:
+  Resources:
+    MessageTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Retain
+      Properties:
+        TableName: 'message_thread'
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+
+functions:
+  create:
+    handler: src/handler/createTodo.createTodo
+    events:
+      - http:
+          path: message
+          method: post
+          cors: true
+  list:
+    handler: src/handler/listTodo.listTodo
+    events:
+      - http:
+          path: message
+          method: get
+          cors: true
+  get:
+    handler: src/handler/getTodo.getTodo
+    events:
+      - http:
+          path: message/{id}
+          method: get
+          cors: true
+  delete:
+    handler: src/handler/deleteTodo.deleteTodo
+    events:
+      - http:
+          path: message/{id}
+          method: delete
+          cors: true
